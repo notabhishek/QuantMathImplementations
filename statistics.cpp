@@ -47,8 +47,80 @@ double StandardNormalDistribution::cdf(const double& x) const {
 }
 
 // Inverse cumulative density function (aka probit function)
+/*
+Purpose of inverse CDF: 
+    P(Z <= x) = quantile, where Z ~ N(0, 1).
+    If you have a quantile, the inverse CDF gives you the corresponding z-score.
+
+Algorithm: Beasly-Springer-Moro algorithm
+    There is no closed form solution to the inverse CDF of the standard normal 
+    distribution. We will use the Beasley-Springer-Moro algorithm to approximate
+    the inverse CDF.
+
+    The algo uses piecewise approximations to accurately approxmiate the inverse as 
+    no single formula is accurate across the whole range. 
+
+    1. Central region (0.5 <= quantile <= 0.92)
+        - uses a rational (fractional) approximation. we compute 
+        - a numerator: sum of odd powered terms of (quantile - 0.5) scaled by coefficients from array a
+        - a denominator: sum of even powered terms of (quantile - 0.5) scaled by coefficients from array b
+        - inv_cdf(quantile) = numerator / denominator
+    2. Uppertail (0.92 < quantile <= 1)
+        - extreme tail is tricker to approximate, so a double logarithm is used 
+        - x = log(-log(1 - quantile)) 
+        - then uses a polynomial expansion using coefficients from array c
+
+    3. Lowertail (0 <= quantile < 0.5)
+        - By symmetry, inverse of a quantile below 0.5 is the negative of the inverse of (1-quantile)
+        - inv_cdf(quantile) = -inv_cdf(1 - quantile) 
+*/
 double StandardNormalDistribution::inv_cdf(const double& quantile) const {
-    // TODO
+    static double a[4] = {   2.50662823884,
+                            -18.61500062529,
+                            41.39119773534,
+                            -25.44106049637};
+
+    static double b[4] = {  -8.47351093090,
+                            23.08336743743,
+                            -21.06224101826,
+                            3.13082909833};
+
+    static double c[9] = {0.3374754822726147,
+                            0.9761690190917186,
+                            0.1607979714918209,
+                            0.0276438810333863,
+                            0.0038405729373609,
+                            0.0003951896511919,
+                            0.0000321767881768,
+                            0.0000002888167364,
+                            0.0000003960315187};
+
+    // central region approximation
+    if (quantile >= 0.5 && quantile <= 0.92) {
+        double num = 0.0;
+        double denom = 1.0;
+
+        for (int i=0; i<4; i++) {
+            num += a[i] * pow((quantile - 0.5), 2*i + 1);
+            denom += b[i] * pow((quantile - 0.5), 2*i);
+        }
+
+        return num/denom;
+    } 
+    // upper tail approximation
+    else if (quantile > 0.92 && quantile < 1) {
+        double num = 0.0;
+
+        for (int i=0; i<9; i++) {
+            num += c[i] * pow((log(-log(1-quantile))), i);
+        }
+
+        return num;
+    } 
+    // using symmetry to approximate lower tail
+    else {
+        return -1.0*inv_cdf(1-quantile);
+    }
 }
 
 // Expectation/mean 
