@@ -145,8 +145,8 @@ Box-Muller method to generate random draws
         - X = R * cos(theta) and Y = R * sin(theta)
         - X, Y are independent standard normal random variables
 */
-void StandardNormalDistribution::random_draws(const std::vector& uniform_draws,
-    std::vector& dist_draws) {
+void StandardNormalDistribution::random_draws(const std::vector<double>& uniform_draws,
+    std::vector<double>& dist_draws) {
     if(uniform_draws.size() != dist_draws.size()) [[unlikely]] {
         std::cerr << "Draws vectors are of unequal size!" << std::endl;
         return;
@@ -158,7 +158,7 @@ void StandardNormalDistribution::random_draws(const std::vector& uniform_draws,
         return;
     }
 
-    for(int i = 0; i < uniform_draws.size() / 2; ++i) {
+    for(size_t i = 0; i < uniform_draws.size() / 2; ++i) {
         double u1 = uniform_draws[2 * i];
         double u2 = uniform_draws[2 * i + 1];
 
