@@ -133,9 +133,41 @@ double StandardNormalDistribution::var() const { return 1.0; }
 double StandardNormalDistribution::stdev() const { return 1.0; }
 
 // Obtain a sequence of random draws from this distribution 
+/*
+Box-Muller method to generate random draws
+ - Box-Muller method converts pairs of independent uniform random numbers (0,1) into 
+   pairs of independent standard normal random numbers.
+ - Refer: https://www.youtube.com/watch?v=cCvnLWYIiQw&ab_channel=IITMadras-B.S.DegreeProgramme for derivation 
+    - Algorithm: 
+        - Generate u1, u2 ~U(0,1)
+        - set R^2 = -2 * log(u1)
+        - set theta = 2 * pi * u2 
+        - X = R * cos(theta) and Y = R * sin(theta)
+        - X, Y are independent standard normal random variables
+*/
 void StandardNormalDistribution::random_draws(const std::vector& uniform_draws,
     std::vector& dist_draws) {
-    // TODO
+    if(uniform_draws.size() != dist_draws.size()) [[unlikely]] {
+        std::cerr << "Draws vectors are of unequal size!" << std::endl;
+        return;
+    }
+
+    // Box-Muller method needs two uniform random variables, so uniform_draws.size() must be even
+    if(uniform_draws.size() & 1) [[unlikely]] {
+        std::cerr << "Number of uniform draws must be even!" << std::endl;
+        return;
+    }
+
+    for(int i = 0; i < uniform_draws.size() / 2; ++i) {
+        double u1 = uniform_draws[2 * i];
+        double u2 = uniform_draws[2 * i + 1];
+
+        double z1 = std::sqrt(-2.0 * std::log(u1)) * std::sin(2.0 * M_PI * u2);
+        double z2 = std::sqrt(-2.0 * std::log(u1)) * std::cos(2.0 * M_PI * u2);
+
+        dist_draws[2 * i] = z1;
+        dist_draws[2 * i + 1] = z2;
+    }
 }
 
 #endif
